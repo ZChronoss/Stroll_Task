@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Fonts/ProximaNova-Regular.otf</string>
+		<string>Fonts/ProximaNova-ThinItalic.otf</string>
+		<string>Fonts/ProximaNova-Thin.otf</string>
+		<string>Fonts/ProximaNova-SemiboldItalic.otf</string>
+		<string>Fonts/ProximaNova-Semibold.otf</string>
+	</array>
+</dict>
+</plist>

@@ -1,10 +1,3 @@
-//
-//  MainView.swift
-//  Stroll_Task1
-//
-//  Created by Renaldi Antonio on 18/06/25.
-//
-
 import SwiftUI
 
 struct MainView: View {
