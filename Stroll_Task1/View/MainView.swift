@@ -10,33 +10,35 @@ import SwiftUI
 struct MainView: View {
     var body: some View {
         TabView {
-            Tab {
+            Group {
+                Tab {
+                    
+                }label: {
+                    Label("Cards", image: "cards")
+                }
                 
-            }label: {
-                Label("Cards", image: "cards")
-            }
-            
-            Tab {
+                Tab {
+                    
+                }label: {
+                    Label("Bonfire", image: "bonfire")
+                }
                 
-            }label: {
-                Label("Bonfire", image: "bonfire")
-            }
-            
-            Tab {
-                ChatView()
-            }label: {
-                Label("Matches", image: "matches")
-            }
-            
-            Tab {
+                Tab {
+                    ChatView()
+                        .toolbarVisibility(.visible, for: .tabBar)
+                        .toolbarBackground(.visible, for: .tabBar)
+                        .toolbarBackground(.tabBar, for: .tabBar)
+                }label: {
+                    Label("Matches", image: "matches")
+                }
                 
-            }label: {
-                Label("Profile", image: "profile")
+                Tab {
+                    
+                }label: {
+                    Label("Profile", image: "profile")
+                }
             }
         }
-        .toolbarColorScheme(.light, for: .tabBar)
-        .toolbarBackground(.red, for: .tabBar)
-        .toolbarBackgroundVisibility(.visible, for: .tabBar)
     }
 }
 
