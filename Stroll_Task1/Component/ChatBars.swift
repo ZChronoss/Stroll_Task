@@ -27,83 +27,86 @@ struct ChatBars: View {
             
             VStack(alignment: .leading) {
                 HStack {
-                    Text("\(name)") // Name
-                        .font(.headline)
-                    
-                    if let chatType = chatType {
-                        ChatBarTag(chatType: chatType)
+                    VStack(alignment: .leading) {
+                        HStack {
+                            Text("\(name)")
+                                .font(.headline)
+                            
+                            if let chatType = chatType {
+                                ChatBarTag(chatType: chatType)
+                            }
+                        }
+                        if !isSoundMessage {
+                            Text("\(message)")
+                                .bold(isRead ? false : true)
+                                .foregroundStyle(isRead ? .readText : .white)
+                        }else {
+                            HStack {
+                                Group {
+                                    Image(systemName: "microphone.fill")
+                                        .bold()
+                                    Image(systemName: "waveform")
+                                        .bold()
+                                    
+                                }
+                                .foregroundStyle(
+                                    LinearGradient(gradient: Gradient(colors: [.voiceMessage, .cardHourBackground]), startPoint: .top, endPoint: .bottom)
+                                )
+                                Text("00:58")
+                                    .bold()
+                                    .foregroundStyle(.voiceMessage)
+                            }
+                        }
                     }
-                }
-                
-                if !isSoundMessage {
-                    Text("\(message)")
-                        .bold(isRead ? false : true)
-                        .foregroundStyle(isRead ? .readText : .white)
-                }else {
-                    HStack {
-                        Group {
-                            Image(systemName: "microphone.fill")
+                    Spacer()
+                    VStack(alignment: .trailing) {
+                        if !isDaysAgo {
+                            Text("6.21 pm")
+                                .font(.caption)
                                 .bold()
-                            Image(systemName: "waveform")
+                                .foregroundStyle(.chatHour)
+                        } else {
+                            Text("Wed")
+                                .font(.caption)
                                 .bold()
+                                .foregroundStyle(.gray)
+                        }
+                        
+                        if pinned && unreadMessageCount == 0 {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 7))
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 4)
+                                .background(.pastelPurple)
+                                .clipShape(Capsule())
                             
                         }
-                        .foregroundStyle(
-                            LinearGradient(gradient: Gradient(colors: [.voiceMessage, .cardHourBackground]), startPoint: .top, endPoint: .bottom)
-                        )
-                        Text("00:58")
-                            .bold()
-                            .foregroundStyle(.voiceMessage)
+                        
+                        if unreadMessageCount > 0 {
+                            Text("\(unreadMessageCount)")
+                                .font(.caption2)
+                                .bold()
+                                .foregroundStyle(.black)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 1)
+                                .background(.pastelPurple)
+                                .clipShape(Capsule())
+                        }
                     }
+                    
                 }
                 
                 Spacer()
-                Divider()
-                    .padding(.top)
-                    .frame(height:1)
-                    .overlay {
-                        Color.divider
-                    }
+                Rectangle()
+                    .fill(.divider)
+                    .frame(height: 1)
             }
             .padding(.leading, 8)
             
             Spacer()
             
-            VStack(alignment: .trailing) {
-                if !isDaysAgo {
-                    Text("6.21 pm")
-                        .font(.caption)
-                        .bold()
-                        .foregroundStyle(.chatHour)
-                } else {
-                    Text("Wed")
-                        .font(.caption)
-                        .bold()
-                        .foregroundStyle(.gray)
-                }
-                
-                if pinned && unreadMessageCount == 0 {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 7))
-                        .foregroundStyle(.black)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 4)
-                        .background(.pastelPurple)
-                        .clipShape(Capsule())
-                    
-                }
-                
-                if unreadMessageCount > 0 {
-                    Text("\(unreadMessageCount)")
-                        .font(.caption2)
-                        .bold()
-                        .foregroundStyle(.black)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(.pastelPurple)
-                        .clipShape(Capsule())
-                }
-            }
+            
         }
         .frame(height: 80)
     }
