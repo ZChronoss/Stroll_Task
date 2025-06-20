@@ -84,10 +84,10 @@ struct ChatBars: View {
                 
                 if pinned && unreadMessageCount == 0 {
                     Image(systemName: "star.fill")
-                        .font(.system(size: 10))
+                        .font(.system(size: 7))
                         .foregroundStyle(.black)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 4)
                         .background(.pastelPurple)
                         .clipShape(Capsule())
                     
@@ -95,11 +95,11 @@ struct ChatBars: View {
                 
                 if unreadMessageCount > 0 {
                     Text("\(unreadMessageCount)")
-                        .font(.system(size: 14))
+                        .font(.caption2)
                         .bold()
                         .foregroundStyle(.black)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
                         .background(.pastelPurple)
                         .clipShape(Capsule())
                 }

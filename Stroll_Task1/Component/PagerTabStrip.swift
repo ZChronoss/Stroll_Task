@@ -38,7 +38,7 @@ struct PagerTabStrip<Content: View>: View {
                     }) {
                         Text(tabs[index])
                             .bold()
-                            .font(.title)
+                            .font(.title2)
                             .foregroundColor(selection == index ? .white : .gray)
                             .padding(.vertical, 4)
                             .background(GeometryReader { geo in

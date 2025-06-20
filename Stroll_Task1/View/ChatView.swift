@@ -8,9 +8,19 @@ struct ChatView: View {
         VStack {
             HStack {
                 VStack(alignment: .leading) {
-                    Text("Your Turn")
-                        .font(.title)
-                        .bold()
+                    HStack(spacing: 14) {
+                        Text("Your Turn")
+                            .font(.title2)
+                            .bold()
+                        
+                        Text("7")
+                            .font(.caption2)
+                            .bold()
+                            .foregroundStyle(.black)
+                            .padding(5)
+                            .background(.pastelPurple)
+                            .clipShape(Circle())
+                    }
                     Text("Make your move, they are waiting 🎵")
                         .font(.footnote)
                         .italic()
@@ -22,10 +32,11 @@ struct ChatView: View {
                 Image("Rep v2")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(height: 90)
+                    .frame(height: 68)
             }
             .frame(alignment: .top)
-            .padding(.bottom, -40)
+            .padding(.top, -30)
+            .padding(.bottom, -100)
             
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 15) {
@@ -34,6 +45,7 @@ struct ChatView: View {
                     YourTurnCards(image: "Binghan", name: "Binghan", age: 28, quote: "If you could choose to have one superpower, what would it be?", doesMakeMove: true, showHour: true, blurred: false)
                 }
             }
+            .padding(.top, -60)
             
             PagerTabStrip(tabs: ["Chats", "Pending"], selection: $selection) {
                 
@@ -59,7 +71,7 @@ struct ChatView: View {
                 }
                 .tag(1)
             }
-            .padding(.top, -30)
+            .padding(.top, -75)
             
         }
         .padding()

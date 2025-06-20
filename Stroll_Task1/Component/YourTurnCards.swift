@@ -32,9 +32,8 @@ struct YourTurnCards: View {
                     .scaledToFill()
                 Rectangle()
                     .foregroundStyle(.black)
-                    .frame(width: 210, height: 80)
+                    .frame(width: 180, height: 110)
                     .blur(radius: 10)
-                    .padding(.bottom, 20)
                 
             }
             .blur(radius: blurred ? 30 : 0)
@@ -76,12 +75,13 @@ struct YourTurnCards: View {
                     Text("📣 They made a move!")
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .font(.caption2)
+                        .font(.system(size: 10))
                         .background(.black)
                         .clipShape(Capsule())
                 }else {
                     Text("")
                         .padding(.vertical, 4)
+                        .font(.system(size: 10))
                 }
                 Spacer()
                 
@@ -95,11 +95,12 @@ struct YourTurnCards: View {
                 Spacer()
                 
                 Text("\(name), \(age)")
-                    .font(.headline)
+                    .font(.system(size: 15))
+                    .bold()
                     .multilineTextAlignment(.center)
                 
                 Text(quote)
-                    .font(.caption)
+                    .font(.system(size: 10))
                     .foregroundStyle(.cardDesc)
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
@@ -107,9 +108,10 @@ struct YourTurnCards: View {
             }
             .padding(.horizontal, 6)
             .padding(.bottom, 45)
+            .padding(.top, -15)
             .foregroundColor(.white)
         }
-        .frame(width: 195, height: 260)
+        .frame(width: 158, height: 220)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(radius: 5)
     }

@@ -30,7 +30,7 @@ struct ChatBarTag: View {
                     .frame(width: 8)
             }
             Text(text)
-                .font(.caption)
+                .font(.caption2)
                 .fontWeight(.semibold)
                 .foregroundStyle(.white)
         }

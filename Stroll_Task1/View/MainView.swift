@@ -1,6 +1,15 @@
 import SwiftUI
 
 struct MainView: View {
+    init() {
+        let tabBarAppearance = UITabBarAppearance()
+        let itemAppearance = UITabBarItemAppearance()
+        itemAppearance.normal.badgeBackgroundColor = .pastelPurple
+        tabBarAppearance.stackedLayoutAppearance = itemAppearance
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+    }
+    
     var body: some View {
         TabView {
             Group {
@@ -9,6 +18,9 @@ struct MainView: View {
                 }label: {
                     Label("Cards", image: "cards")
                 }
+                .badge(
+                    Text("10")
+                )
                 
                 Tab {
                     
