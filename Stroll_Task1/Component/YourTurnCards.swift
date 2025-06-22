@@ -8,9 +8,7 @@ struct Data: Identifiable {
 }
 
 struct YourTurnCards: View {
-    let image: String
-    let name: String
-    let age: Int
+    let user: User
     let quote: String
     
     var doesMakeMove: Bool = false
@@ -27,7 +25,7 @@ struct YourTurnCards: View {
         ZStack(alignment: .bottom) {
             
             Group {
-                Image(image)
+                Image(user.name)
                     .resizable()
                     .scaledToFill()
                 Rectangle()
@@ -51,7 +49,7 @@ struct YourTurnCards: View {
                         Chart {
                             SectorMark(angle: .value("", 0..<16), innerRadius: .ratio(0.9))
                                 .foregroundStyle(.white)
-                          SectorMark(angle: .value("", 16..<24))
+                            SectorMark(angle: .value("", 16..<24))
                                 .foregroundStyle(.clear)
                         }
                         .scaledToFit()
@@ -94,7 +92,7 @@ struct YourTurnCards: View {
                 
                 Spacer()
                 
-                Text("\(name), \(age)")
+                Text("\(user.name), \(user.age)")
                     .font(.system(size: 15))
                     .bold()
                     .multilineTextAlignment(.center)
@@ -115,8 +113,4 @@ struct YourTurnCards: View {
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(radius: 5)
     }
-}
-
-#Preview {
-    YourTurnCards(image: "Amanda", name: "Amanda", age: 22, quote: "What is your most favorite childhood memory?")
 }
