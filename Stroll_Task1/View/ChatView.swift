@@ -57,7 +57,7 @@ struct ChatView: View {
                     }
                 }
                 .flowDestination(for: User.self) { user in
-                    RecordingView(user: user)
+                    RecordingView(user: user, quote: "What is your most favorite childhood memory?", desc: "Mine is definitely sneaking the late night snacks")
                 }
                 .padding(.top, -60)
                 
