@@ -9,81 +9,118 @@ enum AudioControlState {
 }
 
 struct AudioControl: View {
+    let minRecordTime = 15
+    
     @StateObject var recorder = AudioRecorderManager()
     @StateObject var player = AudioPlayerManager()
     
     @State private var isRecording = false
-    @State private var audioUrl: URL?
     @State private var controlState: AudioControlState = .idle
     
     @State var recordCircleProgress: CGFloat = 0
-    @State var elapsedTime = 0
+    @State var elapsedRecordTime = 0
+    @State var elapsedPlaybackTime = 0
     let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
-    var formattedTime: String {
-        let minutes = elapsedTime / 60
-        let seconds = elapsedTime % 60
-        return String(format: "%02d:%02d", minutes, seconds)
+    var hasRecording: Bool {
+        recorder.getRecordingURL() != nil
     }
+    
+    var formattedRecordTime: String {
+        formatTime(elapsedRecordTime)
+    }
+    
+    var formattedPlaybackTime: String {
+        formatTime(elapsedPlaybackTime)
+    }
+    
+    var onSubmit: () -> Void
     
     var body: some View {
         VStack {
-            Text(formattedTime)
-                .bold()
-                .foregroundStyle(.recordingTimer)
-                .font(.subheadline)
-                .onReceive(timer) { _ in
-                    if isRecording {
-                        elapsedTime += 1
+            HStack(alignment: .center) {
+                if controlState == .readyToPlay || controlState == .playing || controlState == .paused {
+                    Group {
+                        Text(formattedPlaybackTime)
+                            .foregroundStyle(controlState == .playing ? .pastelPurple : .recordingTimer)
+                            .font(.footnote)
+                            .onReceive(timer) { _ in
+                                if controlState == .playing && elapsedPlaybackTime < elapsedRecordTime {
+                                    elapsedPlaybackTime += 1
+                                }
+                            }
+                        Text("/")
+                            .foregroundStyle(.recordingTimer)
+                            .font(.footnote)
                     }
                 }
+                Text(formattedRecordTime)
+                    .foregroundStyle(.recordingTimer)
+                    .font(.footnote)
+                    .onReceive(timer) { _ in
+                        if isRecording {
+                            elapsedRecordTime += 1
+                        }
+                    }
+            }
             
-            // AUDIO VISUALIZER
-            Rectangle()
-                .foregroundStyle(.recordingVisualizer)
-                .frame(height: 2)
+            // ANIMATED AUDIO VISUALIZER
+            AnimatedWaveformView(
+                audioLevels: controlState == .readyToPlay || controlState == .playing || controlState == .paused ?
+                player.waveformData : recorder.audioLevels,
+                isRecording: isRecording,
+                isPlaying: controlState == .playing,
+                playbackProgress: player.playbackProgress
+            )
+            .padding(.horizontal)
+            .padding(.vertical)
             
             HStack {
                 Spacer()
                 Button {
-                    elapsedTime = 0
+                    if isRecording {
+                        recorder.stopRecording()
+                    }
+                    elapsedRecordTime = 0
                     isRecording = false
                     recorder.deleteRecording()
                     controlState = .idle
                 }label: {
                     Text("Delete")
+                        .foregroundColor(hasRecording ? .white : .disabledDeleteSubmitBtn)
                 }
-                .disabled(recorder.getRecordingURL() == nil ? true : false)
+                .frame(width: 60)
+                .disabled(!hasRecording)
                 
-                Spacer()
                 
                 Button {
-                    switch controlState {
-                    case .idle:
-                        recorder.startRecording()
-                        controlState = .recording
-                        isRecording = true
+                    withAnimation {
                         
-                    case .recording:
-                        if elapsedTime >= 15 {
-                            recorder.stopRecording()
-                            controlState = .readyToPlay
-                            isRecording = false
-                        }
-                        
-                    case .readyToPlay:
-                        if let url = recorder.getRecordingURL() {
-                            player.play(url: url)
-                            controlState = .playing
-                        }
-                        
-                    case .playing:
-                        player.stop()
-                        controlState = .paused
-                        
-                    case .paused:
-                        if let url = recorder.getRecordingURL() {
-                            player.play(url: url)
+                        switch controlState {
+                        case .idle:
+                            recorder.startRecording()
+                            controlState = .recording
+                            isRecording = true
+                            
+                        case .recording:
+                            if elapsedRecordTime > minRecordTime {
+                                recorder.stopRecording()
+                                controlState = .readyToPlay
+                                isRecording = false
+                            }
+                            
+                        case .readyToPlay:
+                            if let url = recorder.getRecordingURL() {
+                                player.play(url: url)
+                                controlState = .playing
+                            }
+                            
+                        case .playing:
+                            controlState = .paused
+                            player.togglePlayback()
+                            
+                        case .paused:
+                            player.togglePlayback()
                             controlState = .playing
                         }
                     }
@@ -91,23 +128,44 @@ struct AudioControl: View {
                     ZStack(alignment: .center) {
                         Group {
                             Circle()
-                                .stroke(style: StrokeStyle(lineWidth: 2))
-                                .foregroundStyle(.white)
+                                .stroke(style: StrokeStyle(lineWidth: isRecording ? 2 : 1))
+                                .foregroundStyle(isRecording ? .recordBtnStrokeActive : .recordBtnStrokeInactive)
+                            
+                            
                             Circle()
                                 .trim(from: 0, to: recordCircleProgress)
-                                .stroke(style: StrokeStyle(lineWidth: 2))
+                                .stroke(
+                                    AngularGradient(
+                                        gradient: Gradient(colors: [.recordAng3, .recordAng2, .recordAng1]),
+                                        center: .center
+                                    ),
+                                    style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                                )
                                 .rotationEffect(.degrees(-90))
-                                .foregroundStyle(.black)
-                                .onChange(of: isRecording, { oldValue, newValue in
+                                .shadow(color: Color.white, radius: 20, x: 0, y: 0)
+                                .onChange(of: isRecording) { oldValue, newValue in
                                     if newValue == true {
-                                        // Fills the circle in 15 seconds
                                         withAnimation(.linear(duration: 15)) {
                                             recordCircleProgress = 1
                                         }
-                                    }else {
-                                        recordCircleProgress = 0
+                                    } else {
+                                        withAnimation {
+                                            recordCircleProgress = 0
+                                        }
                                     }
-                                })
+                                }
+                                .overlay {
+                                    Group {
+                                        if elapsedRecordTime > minRecordTime {
+                                            withAnimation(.easeInOut(duration: 0.3)) {
+                                                Circle()
+                                                    .stroke(style: StrokeStyle(lineWidth: isRecording ? 2 : 1))
+                                                    .foregroundStyle(.recordBtnStrokeInactive)
+                                                    .transition(.scale.combined(with: .opacity))
+                                            }
+                                        }
+                                    }
+                                }
                         }
                         
                         Group {
@@ -115,28 +173,57 @@ struct AudioControl: View {
                             case .idle:
                                 Circle()
                                     .padding(3)
+                                    .foregroundStyle(.recordActionBtn)
                             case .recording:
                                 Image(systemName: "stop.fill")
-                                    .foregroundStyle(elapsedTime >= 15 ? Color.red: Color.gray)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .foregroundStyle(elapsedRecordTime > minRecordTime ? Color.recordActionBtn: Color.gray)
+                                    .frame(width: 18)
                             case .readyToPlay:
                                 Image(systemName: "play.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .foregroundStyle(.recordActionBtn)
+                                    .frame(width: 18)
+                                    .padding(.leading, 4)
                             case .playing:
                                 Image(systemName: "pause.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .foregroundStyle(.recordActionBtn)
+                                    .frame(width: 16)
                             case .paused:
                                 Image(systemName: "play.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .foregroundStyle(.recordActionBtn)
+                                    .frame(width: 18)
+                                    .padding(.leading, 4)
                             }
                         }
                     }
                 }
-                .frame(width: 40)
+                .frame(width: 45)
+                .padding(.horizontal, 30)
                 
-                Spacer()
                 
-                Text("Submit")
-                    .font(.system(.headline, weight: .regular))
-//                    .foregroundStyle(.white)
+                Button{
+                    onSubmit()
+                }label: {
+                    Text("Submit")
+                        .font(.system(.headline, weight: .regular))
+                        .foregroundStyle(hasRecording && elapsedRecordTime > minRecordTime && !isRecording ? .white : .disabledDeleteSubmitBtn)
+                }
+                .frame(width: 60)
+                
                 Spacer()
             }
+            
+            Text("Unmatch")
+                .foregroundStyle(.unmatchBtn)
+                .font(.caption)
+                .padding(.top)
         }
         .onAppear() {
             player.onFinished = {
@@ -144,8 +231,10 @@ struct AudioControl: View {
             }
         }
     }
-}
-
-#Preview {
-    AudioControl()
+    
+    func formatTime(_ time: Int) -> String {
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%02d:%02d", minutes, seconds)
+    }
 }

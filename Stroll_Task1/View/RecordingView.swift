@@ -11,8 +11,7 @@ struct RecordingView: View {
     /*
      TODO: - UI implement and
      TODO: - audio visualizer
-     TODO: - fix circular progress bar
-     TODO: - control component's opacity when this view open with flow animation
+     TODO: - control component's opacity when this view open with flow animation (idk how)
      */
     
     var body: some View {
@@ -36,13 +35,12 @@ struct RecordingView: View {
                     .fill(Color.black)
                     .blur(radius: 20, opaque: true)
             }
-            
             .ignoresSafeArea()
             
             
             VStack {
-                VStack(spacing: 8) {
-                    HStack {
+                VStack(spacing: 10) {
+                    HStack(spacing: 19) {
                         RoundedRectangle(cornerRadius: 4, style: .circular)
                             .foregroundStyle(.barColor1)
                         RoundedRectangle(cornerRadius: 4, style: .circular)
@@ -70,11 +68,6 @@ struct RecordingView: View {
                             .font(.callout)
                             .bold()
                     }
-//                    .withFlowAnimation{
-//                        opacity = 1
-//                    }onDismiss: {
-//                        opacity = 0
-//                    }
                     .foregroundStyle(.white)
                 }
                 
@@ -117,9 +110,10 @@ struct RecordingView: View {
                     .font(.caption)
                     .italic()
                 
-                Spacer()
-                
-                AudioControl()
+                AudioControl() {
+                    flowDismiss()
+                }
+                .padding(.top, 35)
             }
             .padding()
             .withFlowAnimation {

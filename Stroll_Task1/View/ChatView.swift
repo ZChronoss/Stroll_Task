@@ -33,7 +33,7 @@ struct ChatView: View {
                         Text("Make your move, they are waiting 🎵")
                             .font(.footnote)
                             .italic()
-                            .foregroundStyle(.lightGray)
+                            .foregroundStyle(.lightGrayCust)
                     }
                     
                     Spacer()
@@ -69,7 +69,7 @@ struct ChatView: View {
                                 .font(.caption)
                                 .padding(.vertical, 10)
                                 .italic()
-                                .foregroundStyle(.lightGray)
+                                .foregroundStyle(.lightGrayCust)
                             
                             ChatBars(isRead: true, chatType: .newChat, pinned: true, isSoundMessage: true, name: "Jessica")
                             ChatBars(isRead: false, chatType: .yourMove, unreadMessageCount: 4, message: "Lol I love house music too", name: "Amanda")
