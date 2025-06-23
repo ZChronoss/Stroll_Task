@@ -2,15 +2,18 @@ import SwiftUI
 
 struct RecordingView: View {
     @Environment(\.flowDismiss) var flowDismiss
-    @StateObject var recorder = AudioRecorderManager()
-    @StateObject var player = AudioPlayerManager()
-    
-    @State private var isRecording = false
-    @State private var audioUrl: URL?
+    @State var opacity: CGFloat = 0
     
     var user: User
     let quote: String
     let desc: String
+    
+    /*
+     TODO: - UI implement and
+     TODO: - audio visualizer
+     TODO: - fix circular progress bar
+     TODO: - control component's opacity when this view open with flow animation
+     */
     
     var body: some View {
         ZStack {
@@ -59,6 +62,7 @@ struct RecordingView: View {
                         
                         Text("\(user.name), \(user.age)")
                             .font(.headline)
+                            .opacity(opacity)
                         
                         Spacer()
                         
@@ -66,6 +70,11 @@ struct RecordingView: View {
                             .font(.callout)
                             .bold()
                     }
+//                    .withFlowAnimation{
+//                        opacity = 1
+//                    }onDismiss: {
+//                        opacity = 0
+//                    }
                     .foregroundStyle(.white)
                 }
                 
@@ -92,7 +101,9 @@ struct RecordingView: View {
                                 Circle().stroke(.black, lineWidth: 5)
                             )
                             .offset(y: -38)
+                            .opacity(opacity)
                     }
+                    .opacity(opacity)
                 
                 Text(quote)
                     .foregroundStyle(.white)
@@ -108,57 +119,14 @@ struct RecordingView: View {
                 
                 Spacer()
                 
-                // TIMER FOR SOUND RECORD
-                Text("00:00")
-                    .bold()
-                    .foregroundStyle(.recordingTimer)
-                    .font(.subheadline)
-                
-                // AUDIO VISUALIZER
-                Rectangle()
-                    .foregroundStyle(.recordingVisualizer)
-                    .frame(height: 2)
-                
-                HStack {
-                    Text("Delete")
-                        .font(.system(.headline, weight: .regular))
-                        .foregroundStyle(.white)
-                    
-                    Button {
-                        if isRecording {
-                            recorder.stopRecording()
-                            audioUrl = recorder.getRecordingURL()
-                        } else {
-                            recorder.startRecording()
-                        }
-                        isRecording.toggle()
-                    }label: {
-                        Text(isRecording ? "Stop Recording" : "Start Recording")
-                            .padding()
-                            .background(.blue)
-                            .foregroundStyle(.white)
-                            .cornerRadius(10)
-                    }
-                    
-                    Text("Submit")
-                        .font(.system(.headline, weight: .regular))
-                        .foregroundStyle(.white)
-                }
-                
-                Button(action: {
-                    if let audioUrl = audioUrl {
-                        player.play(url: audioUrl)
-                    }
-                }) {
-                    Text("▶️ Play")
-                        .padding()
-                        .background(Color.green)
-                        .foregroundStyle(.white)
-                        .cornerRadius(10)
-                }
-                .disabled(audioUrl == nil ? true : false)
+                AudioControl()
             }
             .padding()
+            .withFlowAnimation {
+                opacity = 1
+            }onDismiss: {
+                opacity = 0
+            }
         }
     }
 }

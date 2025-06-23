@@ -37,6 +37,21 @@ class AudioRecorderManager: ObservableObject {
         recorder?.stop()
         timer?.invalidate()
     }
+    
+    func deleteRecording() {
+        guard let url = recordedURL else { return }
+
+        do {
+            if FileManager.default.fileExists(atPath: url.path) {
+                try FileManager.default.removeItem(at: url)
+                recordedURL = nil
+                audioLevels = []
+            }
+        } catch {
+            print("Failed to delete recording: \(error)")
+        }
+    }
+
 
     func getRecordingURL() -> URL? {
         return recordedURL
