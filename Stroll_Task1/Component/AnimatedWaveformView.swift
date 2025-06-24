@@ -4,12 +4,14 @@ struct AnimatedWaveformView: View {
     let audioLevels: [Float]
     let isRecording: Bool
     let isPlaying: Bool
+    let isPaused: Bool
     let playbackProgress: Double // 0.0 to 1.0
     
-    init(audioLevels: [Float], isRecording: Bool, isPlaying: Bool = false, playbackProgress: Double = 0.0) {
+    init(audioLevels: [Float], isRecording: Bool, isPlaying: Bool = false, isPaused: Bool = false, playbackProgress: Double = 0.0) {
         self.audioLevels = audioLevels
         self.isRecording = isRecording
         self.isPlaying = isPlaying
+        self.isPaused = isPaused
         self.playbackProgress = playbackProgress
     }
     
@@ -38,14 +40,14 @@ struct AnimatedWaveformView: View {
         let availableWidth = size.width
         let maxBars = Int(availableWidth / totalBarWidth)
         
-        if !isRecording && !isPlaying {
+        if !isRecording && !isPlaying && !isPaused {
             // Draw flat minimal line when idle
             drawFlatLine(context: context, size: size, barsCount: maxBars)
             return
         }
         
-        if isPlaying {
-            // Draw complete waveform with playback progress
+        if isPlaying || isPaused {
+            // Draw complete waveform with playback progress for both playing and paused states
             drawPlaybackWaveform(context: context, size: size, maxBars: maxBars)
             return
         }

@@ -67,9 +67,10 @@ struct AudioControl: View {
             // ANIMATED AUDIO VISUALIZER
             AnimatedWaveformView(
                 audioLevels: controlState == .readyToPlay || controlState == .playing || controlState == .paused ?
-                player.waveformData : recorder.audioLevels,
+                    player.waveformData : recorder.audioLevels,
                 isRecording: isRecording,
                 isPlaying: controlState == .playing,
+                isPaused: controlState == .paused, // Add this line
                 playbackProgress: player.playbackProgress
             )
             .padding(.horizontal)
