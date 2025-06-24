@@ -1,94 +1,142 @@
 import AVFoundation
-import Combine
 
-class AudioRecorderManager: ObservableObject {
-    private var recorder: AVAudioRecorder?
-    private var timer: Timer?
+class AudioRecorderManager: NSObject, ObservableObject, AVAudioRecorderDelegate {
+    private var audioRecorder: AVAudioRecorder?
+    private var recordingURL: URL?
+    private let audioQueue = DispatchQueue(label: "audio.recording", qos: .userInitiated)
     
-    @Published private(set) var recordedURL: URL?
     @Published var audioLevels: [Float] = []
-    @Published var isRecording = false
+    @Published var isRecording: Bool = false
     
-    let session = AVAudioSession.sharedInstance()
+    private var levelTimer: Timer?
+    
+    override init() {
+        super.init()
+        setupAudioSession()
+    }
+    
+    private func setupAudioSession() {
+        audioQueue.async {
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .spokenAudio)
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("Failed to setup audio session: \(error)")
+            }
+        }
+    }
     
     func startRecording() {
-        let settings = [
-            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44100.0,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-        ] as [String : Any]
-        
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("recording.m4a")
-        self.recordedURL = url
-        
-        do {
-            try session.setCategory(.playAndRecord, mode: .default)
-            try session.setActive(true)
-            
-            recorder = try AVAudioRecorder(url: url, settings: settings)
-            recorder?.isMeteringEnabled = true
-            recorder?.record()
-            
-            // Clear previous recording data and start fresh
-            audioLevels = []
-            isRecording = true
-            
-            // Timer to capture audio levels every 50ms for good responsiveness
-            timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-                self.recorder?.updateMeters()
-                let power = self.recorder?.averagePower(forChannel: 0) ?? -160
+        audioQueue.async {
+            do {
+                // Create recording URL
+                let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+                let audioURL = documentsPath.appendingPathComponent("recording_\(Date().timeIntervalSince1970).m4a")
                 
-                // Better normalization: -60dB to 0dB range (more responsive to voice)
-                let normalizedPower = max(-60.0, power) // Clamp minimum to -60dB
-                let normalized = (normalizedPower + 60.0) / 60.0 // Convert to 0-1 range
-                let smoothed = max(0.0, min(1.0, normalized))
+                // Recording settings optimized for performance
+                let settings: [String: Any] = [
+                    AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                    AVSampleRateKey: 22050, // Lower sample rate for better performance
+                    AVNumberOfChannelsKey: 1,
+                    AVEncoderAudioQualityKey: AVAudioQuality.medium.rawValue
+                ]
+                
+                let recorder = try AVAudioRecorder(url: audioURL, settings: settings)
+                recorder.delegate = self
+                recorder.isMeteringEnabled = true
+                recorder.prepareToRecord()
                 
                 DispatchQueue.main.async {
-                    // Accumulate all audio levels (don't remove old ones)
-                    self.audioLevels.append(smoothed)
+                    self.audioRecorder = recorder
+                    self.recordingURL = audioURL
+                    self.audioLevels = [] // Clear previous levels
+                    
+                    recorder.record()
+                    self.isRecording = true
+                    self.startLevelMonitoring()
+                }
+                
+            } catch {
+                DispatchQueue.main.async {
+                    print("Recording failed: \(error)")
                 }
             }
-            
-        } catch {
-            print("Failed to start recording: \(error)")
         }
     }
     
     func stopRecording() {
-        recorder?.stop()
-        timer?.invalidate()
-        timer = nil
+        levelTimer?.invalidate()
+        audioRecorder?.stop()
         isRecording = false
-        
-        do {
-            try session.setActive(false)
-        } catch {
-            print("Failed to deactivate audio session: \(error)")
-        }
     }
     
     func deleteRecording() {
-        guard let url = recordedURL else { return }
-
-        do {
-            if FileManager.default.fileExists(atPath: url.path) {
-                try FileManager.default.removeItem(at: url)
-                recordedURL = nil
-                audioLevels = []
-                isRecording = false
+        stopRecording()
+        
+        // Delete file on background queue
+        audioQueue.async {
+            if let url = self.recordingURL {
+                try? FileManager.default.removeItem(at: url)
             }
-        } catch {
-            print("Failed to delete recording: \(error)")
+            
+            DispatchQueue.main.async {
+                self.recordingURL = nil
+                self.audioLevels = []
+            }
         }
     }
-
+    
     func getRecordingURL() -> URL? {
-        return recordedURL
+        return recordingURL
     }
     
-    // Get the current recording duration in seconds
-    var recordingDuration: TimeInterval {
-        return TimeInterval(audioLevels.count) * 0.05 // 50ms per sample
+    private func startLevelMonitoring() {
+        levelTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            guard let recorder = self.audioRecorder, recorder.isRecording else { return }
+            
+            recorder.updateMeters()
+            let level = recorder.averagePower(forChannel: 0)
+            
+            // Convert decibel to linear scale (0.0 to 1.0)
+            let normalizedLevel = self.normalizeAudioLevel(level)
+            
+            // Update on main thread but limit array size for performance
+            DispatchQueue.main.async {
+                self.audioLevels.append(normalizedLevel)
+                
+                // Keep only recent levels to prevent memory issues
+                if self.audioLevels.count > 1000 {
+                    self.audioLevels.removeFirst(self.audioLevels.count - 1000)
+                }
+            }
+        }
+    }
+    
+    private func normalizeAudioLevel(_ decibels: Float) -> Float {
+        // Convert decibels (-160 to 0) to normalized scale (0.0 to 1.0)
+        let minDb: Float = -60.0
+        let maxDb: Float = 0.0
+        
+        let clampedDb = max(minDb, min(maxDb, decibels))
+        let normalizedLevel = (clampedDb - minDb) / (maxDb - minDb)
+        
+        return normalizedLevel
+    }
+    
+    // MARK: - AVAudioRecorderDelegate
+    
+    func audioRecorderDidFinishRecording(_ recorder: AVAudioRecorder, successfully flag: Bool) {
+        DispatchQueue.main.async {
+            self.isRecording = false
+            self.levelTimer?.invalidate()
+        }
+    }
+    
+    func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?) {
+        DispatchQueue.main.async {
+            self.isRecording = false
+            self.levelTimer?.invalidate()
+            print("Recording error: \(error?.localizedDescription ?? "Unknown error")")
+        }
     }
 }

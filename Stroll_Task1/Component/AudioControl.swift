@@ -64,66 +64,58 @@ struct AudioControl: View {
                     }
             }
             
-            // ANIMATED AUDIO VISUALIZER
-            AnimatedWaveformView(
-                audioLevels: controlState == .readyToPlay || controlState == .playing || controlState == .paused ?
+            ZStack {
+                AnimatedWaveformView(
+                    audioLevels: controlState == .readyToPlay || controlState == .playing || controlState == .paused ?
                     player.waveformData : recorder.audioLevels,
-                isRecording: isRecording,
-                isPlaying: controlState == .playing,
-                isPaused: controlState == .paused, // Add this line
-                playbackProgress: player.playbackProgress
-            )
+                    isRecording: isRecording,
+                    isPlaying: controlState == .playing,
+                    isPaused: controlState == .paused,
+                    playbackProgress: player.playbackProgress
+                )
+                .opacity(player.isLoading ? 0.3 : 1.0)
+                
+                // Loading indicator
+                if player.isLoading {
+                    ProgressView()
+                        .scaleEffect(0.8)
+                }
+            }
             .padding(.horizontal)
-            .padding(.vertical)
             
             HStack {
                 Spacer()
                 Button {
                     if isRecording {
                         recorder.stopRecording()
+                    } else if player.isPlaying {
+                        player.stop()
                     }
                     elapsedRecordTime = 0
+                    elapsedPlaybackTime = 0
                     isRecording = false
-                    recorder.deleteRecording()
+                    
+                    // Show immediate feedback
                     controlState = .idle
-                }label: {
+                    
+                    // Delete on background
+                    DispatchQueue.global(qos: .utility).async {
+                        recorder.deleteRecording()
+                    }
+                } label: {
                     Text("Delete")
                         .foregroundColor(hasRecording ? .white : .disabledDeleteSubmitBtn)
                 }
                 .frame(width: 60)
                 .disabled(!hasRecording)
                 
-                
                 Button {
-                    withAnimation {
+                    // Haptic feedback
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+                    impactFeedback.impactOccurred()
                         
-                        switch controlState {
-                        case .idle:
-                            recorder.startRecording()
-                            controlState = .recording
-                            isRecording = true
-                            
-                        case .recording:
-                            if elapsedRecordTime > minRecordTime {
-                                recorder.stopRecording()
-                                controlState = .readyToPlay
-                                isRecording = false
-                            }
-                            
-                        case .readyToPlay:
-                            if let url = recorder.getRecordingURL() {
-                                player.play(url: url)
-                                controlState = .playing
-                            }
-                            
-                        case .playing:
-                            controlState = .paused
-                            player.togglePlayback()
-                            
-                        case .paused:
-                            player.togglePlayback()
-                            controlState = .playing
-                        }
+                    withAnimation {
+                        handleControlButtonPress()
                     }
                 }label: {
                     ZStack(alignment: .center) {
@@ -229,6 +221,7 @@ struct AudioControl: View {
         .onAppear() {
             player.onFinished = {
                 controlState = .readyToPlay
+                elapsedPlaybackTime = 0
             }
         }
         .ignoresSafeArea(edges: .bottom)
@@ -238,5 +231,36 @@ struct AudioControl: View {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%02d:%02d", minutes, seconds)
+    }
+    
+    private func handleControlButtonPress() {
+        switch controlState {
+        case .idle:
+            recorder.startRecording()
+            controlState = .recording
+            isRecording = true
+            
+        case .recording:
+            if elapsedRecordTime >= 15 {
+                recorder.stopRecording()
+                controlState = .readyToPlay
+                isRecording = false
+            }
+            
+        case .readyToPlay:
+            elapsedPlaybackTime = 0
+            if let url = recorder.getRecordingURL() {
+                player.play(url: url)
+                controlState = .playing
+            }
+            
+        case .playing:
+            controlState = .paused
+            player.togglePlayback()
+            
+        case .paused:
+            player.togglePlayback()
+            controlState = .playing
+        }
     }
 }

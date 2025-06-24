@@ -3,30 +3,54 @@ import AVFoundation
 class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private var player: AVAudioPlayer?
     private var timer: Timer?
+    private let audioQueue = DispatchQueue(label: "audio.processing", qos: .userInitiated)
 
-    @Published var playbackProgress: Double = 0 // 0.0 to 1.0
+    @Published var playbackProgress: Double = 0
     @Published var waveformData: [Float] = []
     @Published var isPlaying: Bool = false
+    @Published var isLoading: Bool = false // Add loading state
     
     var onFinished: (() -> Void)?
 
     func play(url: URL) {
-        do {
-            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .spokenAudio)
-            try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
-            try AVAudioSession.sharedInstance().setActive(true)
-            
-            player = try AVAudioPlayer(contentsOf: url)
-            player?.delegate = self
-            
-            // Generate waveform data from the audio file
-            generateWaveformData(from: url)
-            
-            player?.play()
-            isPlaying = true
-            startTimer()
-        } catch {
-            print("Playback failed: \(error)")
+        // Set loading state immediately
+        DispatchQueue.main.async {
+            self.isLoading = true
+        }
+        
+        // Do heavy lifting on background queue
+        audioQueue.async {
+            do {
+                // Configure audio session on background thread
+                try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .spokenAudio)
+                try AVAudioSession.sharedInstance().overrideOutputAudioPort(.speaker)
+                try AVAudioSession.sharedInstance().setActive(true)
+                
+                // Create player on background thread
+                let audioPlayer = try AVAudioPlayer(contentsOf: url)
+                audioPlayer.delegate = self
+                audioPlayer.prepareToPlay() // Preload the audio
+                
+                // Generate waveform data on background thread
+                self.generateWaveformDataAsync(from: url) { waveformData in
+                    // Switch back to main thread for UI updates and playback
+                    DispatchQueue.main.async {
+                        self.player = audioPlayer
+                        self.waveformData = waveformData
+                        self.isLoading = false
+                        
+                        audioPlayer.play()
+                        self.isPlaying = true
+                        self.startTimer()
+                    }
+                }
+                
+            } catch {
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    print("Playback failed: \(error)")
+                }
+            }
         }
     }
 
@@ -67,29 +91,31 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         }
     }
     
-    private func generateWaveformData(from url: URL) {
-        do {
-            let audioFile = try AVAudioFile(forReading: url)
-            let format = audioFile.processingFormat
-            let frameCount = UInt32(audioFile.length)
-            
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
-                return
+    private func generateWaveformDataAsync(from url: URL, completion: @escaping ([Float]) -> Void) {
+        audioQueue.async {
+            do {
+                let audioFile = try AVAudioFile(forReading: url)
+                let format = audioFile.processingFormat
+                let frameCount = UInt32(audioFile.length)
+                
+                guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+                    completion([])
+                    return
+                }
+                
+                try audioFile.read(into: buffer)
+                
+                // Process audio data
+                let samples = self.extractSamples(from: buffer)
+                let processedSamples = self.normalizeAndEnhanceAudioSamples(samples)
+                let downsampledData = self.downsampleAudio(samples: processedSamples, targetSampleCount: 300)
+                
+                completion(downsampledData)
+                
+            } catch {
+                print("Failed to generate waveform data: \(error)")
+                completion([])
             }
-            
-            try audioFile.read(into: buffer)
-            
-            // Convert audio buffer to waveform data
-            let samples = extractSamples(from: buffer)
-            let processedSamples = normalizeAndEnhanceAudioSamples(samples)
-            let downsampledData = downsampleAudio(samples: processedSamples, targetSampleCount: 300)
-            
-            DispatchQueue.main.async {
-                self.waveformData = downsampledData
-            }
-            
-        } catch {
-            print("Failed to generate waveform data: \(error)")
         }
     }
     
@@ -99,8 +125,9 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         let frameLength = Int(buffer.frameLength)
         
         var samples: [Float] = []
+        samples.reserveCapacity(frameLength) // Pre-allocate memory
+        
         for i in 0..<frameLength {
-            // Use absolute value to get amplitude
             samples.append(abs(channelData[i]))
         }
         
@@ -110,20 +137,14 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     private func normalizeAndEnhanceAudioSamples(_ samples: [Float]) -> [Float] {
         guard !samples.isEmpty else { return samples }
         
-        // Find the maximum value for normalization
         let maxValue = samples.max() ?? 1.0
-        
-        // Avoid division by zero
         guard maxValue > 0 else { return samples }
         
-        // Normalize and apply processing similar to recording
+        // Use more efficient array operations
         return samples.map { sample in
             let normalized = sample / maxValue
-            
-            // Apply the same processing as in AnimatedWaveformView
-            let processedLevel = max(0.05, normalized) // Minimum height for visibility
-            let scaledLevel = pow(processedLevel, 0.6) // Power curve to make quiet sounds more visible
-            
+            let processedLevel = max(0.05, normalized)
+            let scaledLevel = pow(processedLevel, 0.6)
             return min(1.0, scaledLevel)
         }
     }
@@ -133,20 +154,15 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
         
         let blockSize = samples.count / targetSampleCount
         var downsampledData: [Float] = []
+        downsampledData.reserveCapacity(targetSampleCount) // Pre-allocate memory
         
         for i in 0..<targetSampleCount {
             let startIndex = i * blockSize
             let endIndex = min(startIndex + blockSize, samples.count)
             
-            // Get the block of samples
             let blockSamples = Array(samples[startIndex..<endIndex])
-            
-            // Use peak detection instead of just RMS for better visual representation
             let peak = blockSamples.max() ?? 0.0
             let rms = sqrt(blockSamples.map { $0 * $0 }.reduce(0, +) / Float(blockSamples.count))
-            
-            // Combine peak and RMS for better waveform visualization
-            // This gives more dynamic range while maintaining the overall energy representation
             let combinedValue = (peak * 0.7) + (rms * 0.3)
             
             downsampledData.append(combinedValue)
@@ -156,9 +172,11 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
     }
     
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        timer?.invalidate()
-        isPlaying = false
-        playbackProgress = 0
-        onFinished?()
+        DispatchQueue.main.async {
+            self.timer?.invalidate()
+            self.isPlaying = false
+            self.playbackProgress = 0
+            self.onFinished?()
+        }
     }
 }
