@@ -1,7 +1,7 @@
 import SwiftUI
 import Charts
 
-struct Data: Identifiable {
+struct CardData: Identifiable {
     var id = UUID()
     
     let hours: Int
@@ -16,7 +16,7 @@ struct YourTurnCards: View {
     
     var blurred: Bool = true
     
-    @State private var hours: [Data] = [
+    @State private var hours: [CardData] = [
         .init(hours: 24),
         .init(hours: 16)
     ]

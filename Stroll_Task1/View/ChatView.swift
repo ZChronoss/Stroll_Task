@@ -1,16 +1,18 @@
 import SwiftUI
 import FlowStack
 
-var users: [User] = [
-    User(name: "Amanda", age: 22),
-    User(name: "Malte", age: 31),
-    User(name: "Binghan", age: 28)
-]
+//var users: [User] = [
+//    User(name: "Amanda", age: 22, question: "What is your most favorite childhood memory?"),
+//    User(name: "Malte", age: 31, question: "What is the most important quality in friendships to you?"),
+//    User(name: "Binghan", age: 28, question: "If you could choose to have one superpower, what would it be?")
+//]
 
 struct ChatView: View {
     @Namespace var animation
     
     @State var selection = 0
+    
+    @State private var users = [User]()
     
     var body: some View {
         FlowStack {
@@ -51,13 +53,13 @@ struct ChatView: View {
                     LazyHStack(spacing: 15) {
                         ForEach(users) { user in
                             FlowLink(value: user, configuration: .init(cornerRadius: 20)) {
-                                YourTurnCards(user: user, quote: "What is your most favorite childhood memory?", blurred: false)
+                                YourTurnCards(user: user, quote: user.question, blurred: false)
                             }
                         }
                     }
                 }
                 .flowDestination(for: User.self) { user in
-                    RecordingView(user: user, quote: "What is your most favorite childhood memory?", desc: "Mine is definitely sneaking the late night snacks")
+                    RecordingView(user: user, quote: user.question, desc: "Mine is definitely sneaking the late night snacks")
                 }
                 .padding(.top, -60)
                 
@@ -104,6 +106,9 @@ struct ChatView: View {
                     })
                     .offset(x: -40, y: 0)
             )
+        }
+        .onAppear() {
+            users = DataUtils.decode("Person.json")
         }
         .ignoresSafeArea(edges: .bottom)
         

@@ -123,6 +123,6 @@ struct RecordingView: View {
 
 
 #Preview {
-    let user = User(name: "Amanda", age: 22)
+    let user = User(id: 1, name: "Amanda", age: 22, question: "What is your most favorite childhood memory?")
     RecordingView(user: user, quote: "What is your most favorite childhood memory?", desc: "Mine is definitely sneaking the late night snacks")
 }

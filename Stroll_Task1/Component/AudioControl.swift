@@ -208,6 +208,7 @@ struct AudioControl: View {
                         .font(.system(.headline, weight: .regular))
                         .foregroundStyle(hasRecording && elapsedRecordTime > minRecordTime && !isRecording ? .white : .disabledDeleteSubmitBtn)
                 }
+                .disabled(hasRecording && elapsedRecordTime > minRecordTime && !isRecording ? false : true)
                 .frame(width: 60)
                 
                 Spacer()

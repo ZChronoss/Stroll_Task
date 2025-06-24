@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "name": "Amanda",
+        "age": 22,
+        "question": "What is your most favorite childhood memory?"
+    },
+    {
+        "id": 2,
+        "name": "Malte",
+        "age": 31,
+        "question": "What is the most important quality in friendships to you?"
+    },
+    {
+        "id": 3,
+        "name": "Amanda",
+        "age": 22,
+        "question": "If you could choose to have one superpower, what would it be?"
+    }
+]
