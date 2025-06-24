@@ -8,12 +8,6 @@ struct RecordingView: View {
     let quote: String
     let desc: String
     
-    /*
-     TODO: - UI implement and
-     TODO: - audio visualizer
-     TODO: - control component's opacity when this view open with flow animation (idk how)
-     */
-    
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
@@ -122,6 +116,8 @@ struct RecordingView: View {
                 opacity = 0
             }
         }
+        .toolbarVisibility(.hidden, for: .tabBar)
+        .ignoresSafeArea(edges: .bottom)
     }
 }
 

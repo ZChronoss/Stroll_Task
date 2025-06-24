@@ -105,6 +105,7 @@ struct ChatView: View {
                     .offset(x: -40, y: 0)
             )
         }
+        .ignoresSafeArea(edges: .bottom)
         
     }
 }

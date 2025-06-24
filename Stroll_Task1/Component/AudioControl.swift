@@ -231,6 +231,7 @@ struct AudioControl: View {
                 controlState = .readyToPlay
             }
         }
+        .ignoresSafeArea(edges: .bottom)
     }
     
     func formatTime(_ time: Int) -> String {

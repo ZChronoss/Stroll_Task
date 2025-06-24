@@ -5,6 +5,7 @@ struct MainView: View {
         let tabBarAppearance = UITabBarAppearance()
         let itemAppearance = UITabBarItemAppearance()
         itemAppearance.normal.badgeBackgroundColor = .pastelPurple
+        tabBarAppearance.backgroundColor = .tabBar
         tabBarAppearance.stackedLayoutAppearance = itemAppearance
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
@@ -30,9 +31,6 @@ struct MainView: View {
                 
                 Tab {
                     ChatView()
-                        .toolbarVisibility(.visible, for: .tabBar)
-                        .toolbarBackground(.visible, for: .tabBar)
-                        .toolbarBackground(.tabBar, for: .tabBar)
                 }label: {
                     Label("Matches", image: "matches")
                 }
