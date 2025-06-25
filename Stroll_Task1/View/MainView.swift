@@ -15,7 +15,7 @@ struct MainView: View {
         TabView {
             Group {
                 Tab {
-                    
+                    ChatView()
                 }label: {
                     Label("Cards", image: "cards")
                 }
@@ -24,7 +24,7 @@ struct MainView: View {
                 )
                 
                 Tab {
-                    
+                    ChatView()
                 }label: {
                     Label("Bonfire", image: "bonfire")
                 }
@@ -36,13 +36,12 @@ struct MainView: View {
                 }
                 
                 Tab {
-                    
+                    ChatView()
                 }label: {
                     Label("Profile", image: "profile")
                 }
             }
         }
-        .shadow(color: .black, radius: 300, y: 100)
     }
 }
 

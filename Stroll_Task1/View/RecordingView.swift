@@ -1,4 +1,6 @@
 import SwiftUI
+import CoreImage
+import CoreImage.CIFilterBuiltins
 
 struct RecordingView: View {
     @Environment(\.flowDismiss) var flowDismiss
@@ -8,26 +10,31 @@ struct RecordingView: View {
     let quote: String
     let desc: String
     
+    private let image: Image
+    
+    init(user: User, quote: String, desc: String) {
+        self.user = user
+        self.quote = quote
+        self.desc = desc
+        
+        let uiImage = UIImage(named: user.name) ?? UIImage()
+        let filteredUIImage = RecordingView.applyVignetteEffect(to: uiImage)
+        image = Image(uiImage: filteredUIImage)
+    }
+    
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
-                Image(user.name)
+                image
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .clipped()
                     .overlay {
-                        Circle()
-                            .stroke(.black, lineWidth: 45)
-                            .blur(radius: 20)
-                            .frame(width: 690, height: 610)
-                    }
-                    .overlay {
-                        LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                        LinearGradient(colors: [.clear, .clear, .clear, .black], startPoint: .top, endPoint: .bottom)
                     }
                 
                 Rectangle()
                     .fill(Color.black)
-                    .blur(radius: 20, opaque: true)
             }
             .ignoresSafeArea()
             
@@ -42,37 +49,39 @@ struct RecordingView: View {
                     }
                     .frame(height: 4)
                     
-                    HStack {
+                    HStack(alignment: .center) {
                         Label("", systemImage: "chevron.left")
                             .font(.callout)
                             .bold()
                             .onTapGesture {
                                 flowDismiss()
                             }
+                            .frame(width: 45)
                         
                         Spacer()
                         
                         Text("\(user.name), \(user.age)")
-                            .font(.headline)
+                            .font(.system(size: 20, weight: .bold))
                             .opacity(opacity)
                         
                         Spacer()
                         
                         Label("", systemImage: "ellipsis")
-                            .font(.callout)
+                            .font(.body)
                             .bold()
+                            .frame(width: 45)
                     }
                     .foregroundStyle(.white)
+                    .padding(.top, 5)
                 }
                 
                 Spacer()
                 
-                let circleSize = CGFloat(60)
+                let circleSize = CGFloat(55)
                 
                 Text("Stroll question")
                     .scaledToFill()
-                    .font(.system(size: 10))
-                    .bold()
+                    .font(.system(.caption, weight: .semibold))
                     .padding(.vertical, 4)
                     .padding(.horizontal, 11)
                     .foregroundStyle(.white)
@@ -81,27 +90,28 @@ struct RecordingView: View {
                     .overlay {
                         Image(user.name)
                             .resizable()
-                            .scaledToFill()
+                            .aspectRatio(contentMode: .fill)
                             .frame(width: circleSize, height: circleSize)
                             .clipShape(Circle())
                             .overlay(
                                 Circle().stroke(.black, lineWidth: 5)
                             )
-                            .offset(y: -38)
+                            .offset(y: -36)
                             .opacity(opacity)
                     }
                     .opacity(opacity)
+                    .padding(.bottom, -6)
                 
+                // I can't make the line spacing in this part closer even with negative number
                 Text(quote)
                     .foregroundStyle(.white)
-                    .font(.title2)
-                    .bold()
+                    .font(.system(size: 24, weight: .bold))
                     .multilineTextAlignment(.center)
                     .padding(.bottom, 2)
                 
                 Text("\"\(desc)\"")
                     .foregroundStyle(.recordingDesc)
-                    .font(.caption)
+                    .font(.subheadline)
                     .italic()
                 
                 AudioControl() {
@@ -116,9 +126,33 @@ struct RecordingView: View {
                 opacity = 0
             }
         }
+        .padding(.top, 35)
         .toolbarVisibility(.hidden, for: .tabBar)
-        .ignoresSafeArea(edges: .bottom)
+        .ignoresSafeArea(edges: .vertical)
     }
+    
+    static func applyVignetteEffect(to inputImage: UIImage) -> UIImage {
+        guard let ciImage = CIImage(image: inputImage) else {
+            fatalError("Image can't be loaded")
+        }
+        
+        let filter = CIFilter.vignette()
+        filter.inputImage = ciImage
+        filter.intensity = 5.0
+        
+        let context = CIContext()
+        
+        // Create a CGImage from the CIImage
+        guard let outputCIImage = filter.outputImage, let cgImage = context.createCGImage(outputCIImage, from: outputCIImage.extent) else {
+            return inputImage
+        }
+        
+        // Create a UIImage from the CGImage
+        let outputUIImage = UIImage(cgImage: cgImage)
+        
+        return outputUIImage
+    }
+        
 }
 
 

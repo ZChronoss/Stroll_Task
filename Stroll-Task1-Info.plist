@@ -4,11 +4,11 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Fonts/ProximaNova-Regular.otf</string>
-		<string>Fonts/ProximaNova-ThinItalic.otf</string>
-		<string>Fonts/ProximaNova-Thin.otf</string>
-		<string>Fonts/ProximaNova-SemiboldItalic.otf</string>
-		<string>Fonts/ProximaNova-Semibold.otf</string>
+		<string>ProximaNova-Bold.otf</string>
+		<string>ProximaNova-Regular.otf</string>
+		<string>ProximaNova-Semibold.otf</string>
+		<string>ProximaNova-Thin.otf</string>
+		<string>ProximaNova-RegularItalic.otf</string>
 	</array>
 </dict>
 </plist>

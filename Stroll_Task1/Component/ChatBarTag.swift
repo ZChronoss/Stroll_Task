@@ -24,18 +24,18 @@ struct ChatBarTag: View {
     }
     
     var body: some View {
-        HStack {
+        HStack(spacing: 6) {
             if chatType == .newChat {
                 Circle()
-                    .frame(width: 8)
+                    .frame(width: 5)
             }
             Text(text)
-                .font(.caption2)
+                .font(.system(size: 10, weight: .regular))
                 .fontWeight(.semibold)
                 .foregroundStyle(.white)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 5)
+        .padding(.horizontal, 8)
+        .padding(.vertical, chatType == .newChat ? 3 : 2)
         .background(backgroundColor)
         .clipShape(Capsule())
         

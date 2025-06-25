@@ -129,7 +129,95 @@ class AudioRecorderManager: NSObject, ObservableObject, AVAudioRecorderDelegate 
         DispatchQueue.main.async {
             self.isRecording = false
             self.levelTimer?.invalidate()
+            
+            // Generate waveform data immediately after recording finishes
+            if flag, let url = self.recordingURL {
+                self.generateWaveformForPlayback(from: url)
+            }
         }
+    }
+    
+    // Add this new method to generate waveform data for playback
+    private func generateWaveformForPlayback(from url: URL) {
+        audioQueue.async {
+            do {
+                let audioFile = try AVAudioFile(forReading: url)
+                let format = audioFile.processingFormat
+                let frameCount = UInt32(audioFile.length)
+                
+                guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frameCount) else {
+                    return
+                }
+                
+                try audioFile.read(into: buffer)
+                
+                // Process audio data same as player
+                let samples = self.extractSamplesForPlayback(from: buffer)
+                let processedSamples = self.normalizeAndEnhanceAudioSamples(samples)
+                let downsampledData = self.downsampleAudio(samples: processedSamples, targetSampleCount: 300)
+                
+                DispatchQueue.main.async {
+                    // Store the waveform data that can be accessed by the player
+                    self.playbackWaveformData = downsampledData
+                }
+                
+            } catch {
+                print("Failed to generate playback waveform data: \(error)")
+            }
+        }
+    }
+    
+    @Published var playbackWaveformData: [Float] = []
+    
+    private func extractSamplesForPlayback(from buffer: AVAudioPCMBuffer) -> [Float] {
+        guard let floatChannelData = buffer.floatChannelData else { return [] }
+        let channelData = floatChannelData[0]
+        let frameLength = Int(buffer.frameLength)
+        
+        var samples: [Float] = []
+        samples.reserveCapacity(frameLength)
+        
+        for i in 0..<frameLength {
+            samples.append(abs(channelData[i]))
+        }
+        
+        return samples
+    }
+    
+    private func normalizeAndEnhanceAudioSamples(_ samples: [Float]) -> [Float] {
+        guard !samples.isEmpty else { return samples }
+        
+        let maxValue = samples.max() ?? 1.0
+        guard maxValue > 0 else { return samples }
+        
+        return samples.map { sample in
+            let normalized = sample / maxValue
+            let processedLevel = max(0.05, normalized)
+            let scaledLevel = pow(processedLevel, 0.6)
+            return min(1.0, scaledLevel)
+        }
+    }
+    
+    private func downsampleAudio(samples: [Float], targetSampleCount: Int) -> [Float] {
+        guard samples.count > targetSampleCount else { return samples }
+        
+        let blockSize = samples.count / targetSampleCount
+        var downsampledData: [Float] = []
+        downsampledData.reserveCapacity(targetSampleCount)
+        
+        for i in 0..<targetSampleCount {
+            let startIndex = i * blockSize
+            let endIndex = min(startIndex + blockSize, samples.count)
+            
+            let blockSamples = Array(samples[startIndex..<endIndex])
+            let peak = blockSamples.max() ?? 0.0
+            let rms = sqrt(blockSamples.map { $0 * $0 }.reduce(0, +) / Float(blockSamples.count))
+            let combinedValue = (peak * 0.7) + (rms * 0.3)
+            
+            downsampledData.append(combinedValue)
+        }
+        
+        return downsampledData
     }
     
     func audioRecorderEncodeErrorDidOccur(_ recorder: AVAudioRecorder, error: Error?) {

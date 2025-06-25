@@ -31,18 +31,14 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                 audioPlayer.delegate = self
                 audioPlayer.prepareToPlay() // Preload the audio
                 
-                // Generate waveform data on background thread
-                self.generateWaveformDataAsync(from: url) { waveformData in
-                    // Switch back to main thread for UI updates and playback
-                    DispatchQueue.main.async {
-                        self.player = audioPlayer
-                        self.waveformData = waveformData
-                        self.isLoading = false
-                        
-                        audioPlayer.play()
-                        self.isPlaying = true
-                        self.startTimer()
-                    }
+                // Switch back to main thread for UI updates and playback
+                DispatchQueue.main.async {
+                    self.player = audioPlayer
+                    self.isLoading = false
+                    
+                    audioPlayer.play()
+                    self.isPlaying = true
+                    self.startTimer()
                 }
                 
             } catch {
@@ -51,6 +47,13 @@ class AudioPlayerManager: NSObject, ObservableObject, AVAudioPlayerDelegate {
                     print("Playback failed: \(error)")
                 }
             }
+        }
+    }
+    
+    // Add method to set waveform data from recorder
+    func setWaveformData(_ data: [Float]) {
+        DispatchQueue.main.async {
+            self.waveformData = data
         }
     }
 

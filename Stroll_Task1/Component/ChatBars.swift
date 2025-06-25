@@ -13,7 +13,7 @@ struct ChatBars: View {
     
     var isDaysAgo: Bool = false
     
-    private let imageSize: CGFloat = 70
+    private let imageSize: CGFloat = 53
     var body: some View {
         HStack(alignment: .top) {
             VStack(alignment: .center) {
@@ -26,11 +26,12 @@ struct ChatBars: View {
             }
             
             VStack(alignment: .leading) {
-                HStack {
+                HStack(alignment: .top) {
                     VStack(alignment: .leading) {
                         HStack {
                             Text("\(name)")
                                 .font(.headline)
+                                .bold()
                             
                             if let chatType = chatType {
                                 ChatBarTag(chatType: chatType)
@@ -38,43 +39,51 @@ struct ChatBars: View {
                         }
                         if !isSoundMessage {
                             Text("\(message)")
+                                .font(.subheadline)
                                 .bold(isRead ? false : true)
                                 .foregroundStyle(isRead ? .readText : .white)
                         }else {
-                            HStack {
+                            HStack(spacing: 10) {
                                 Group {
                                     Image(systemName: "microphone.fill")
-                                        .bold()
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 13)
                                     Image(systemName: "waveform")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 20)
                                         .bold()
-                                    
                                 }
                                 .foregroundStyle(
                                     LinearGradient(gradient: Gradient(colors: [.voiceMessage, .cardHourBackground]), startPoint: .top, endPoint: .bottom)
                                 )
                                 Text("00:58")
+                                    .font(.callout)
                                     .bold()
                                     .foregroundStyle(.voiceMessage)
                             }
                         }
                     }
                     Spacer()
-                    VStack(alignment: .trailing) {
+                    VStack(alignment: .trailing, spacing: 4) {
                         if !isDaysAgo {
                             Text("6.21 pm")
-                                .font(.caption)
+                                .font(.footnote)
                                 .bold()
                                 .foregroundStyle(.chatHour)
                         } else {
                             Text("Wed")
-                                .font(.caption)
+                                .font(.footnote)
                                 .bold()
                                 .foregroundStyle(.gray)
                         }
                         
                         if pinned && unreadMessageCount == 0 {
                             Image(systemName: "star.fill")
-                                .font(.system(size: 7))
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 7)
                                 .foregroundStyle(.black)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 4)
@@ -104,11 +113,10 @@ struct ChatBars: View {
             }
             .padding(.leading, 8)
             
-            Spacer()
-            
             
         }
-        .frame(height: 80)
+        .frame(height: 64)
+        .padding(.top, 3)
     }
 }
 

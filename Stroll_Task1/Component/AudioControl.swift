@@ -3,6 +3,7 @@ import SwiftUI
 enum AudioControlState {
     case idle          // ready to start recording
     case recording     // currently recording
+    case processing    // generating waveform after recording
     case readyToPlay   // ready to play audio
     case playing       // currently playing audio
     case paused        // audio is paused
@@ -15,6 +16,7 @@ struct AudioControl: View {
     @StateObject var player = AudioPlayerManager()
     
     @State private var isRecording = false
+    @State private var audioUrl: URL?
     @State private var controlState: AudioControlState = .idle
     
     @State var recordCircleProgress: CGFloat = 0
@@ -38,25 +40,23 @@ struct AudioControl: View {
     
     var body: some View {
         VStack {
-            HStack(alignment: .center) {
+            HStack(alignment: .center, spacing: 4) {
                 if controlState == .readyToPlay || controlState == .playing || controlState == .paused {
-                    Group {
-                        Text(formattedPlaybackTime)
-                            .foregroundStyle(controlState == .playing ? .pastelPurple : .recordingTimer)
-                            .font(.footnote)
-                            .onReceive(timer) { _ in
-                                if controlState == .playing && elapsedPlaybackTime < elapsedRecordTime {
-                                    elapsedPlaybackTime += 1
-                                }
+                    Text(formattedPlaybackTime)
+                        .foregroundStyle(controlState == .playing ? .pastelPurple : .recordingTimer)
+                        .font(.subheadline)
+                        .onReceive(timer) { _ in
+                            if controlState == .playing && elapsedPlaybackTime < elapsedRecordTime {
+                                elapsedPlaybackTime += 1
                             }
-                        Text("/")
-                            .foregroundStyle(.recordingTimer)
-                            .font(.footnote)
-                    }
+                        }
+                    Text("/")
+                        .foregroundStyle(.recordingTimer)
+                        .font(.subheadline)
                 }
                 Text(formattedRecordTime)
                     .foregroundStyle(.recordingTimer)
-                    .font(.footnote)
+                    .font(.subheadline)
                     .onReceive(timer) { _ in
                         if isRecording {
                             elapsedRecordTime += 1
@@ -66,22 +66,23 @@ struct AudioControl: View {
             
             ZStack {
                 AnimatedWaveformView(
-                    audioLevels: controlState == .readyToPlay || controlState == .playing || controlState == .paused ?
-                    player.waveformData : recorder.audioLevels,
+                    audioLevels: getWaveformData(),
                     isRecording: isRecording,
                     isPlaying: controlState == .playing,
                     isPaused: controlState == .paused,
                     playbackProgress: player.playbackProgress
                 )
-                .opacity(player.isLoading ? 0.3 : 1.0)
+                .opacity(player.isLoading || controlState == .processing ? 0.3 : 1.0)
                 
-                // Loading indicator
-                if player.isLoading {
+                // Loading indicator - show during playback loading AND processing
+                if player.isLoading || controlState == .processing {
                     ProgressView()
                         .scaleEffect(0.8)
                 }
             }
             .padding(.horizontal)
+            .padding(.bottom, 25)
+            .padding(.top, 15)
             
             HStack {
                 Spacer()
@@ -104,6 +105,7 @@ struct AudioControl: View {
                     }
                 } label: {
                     Text("Delete")
+                        .font(.system(size: 18, weight: .regular))
                         .foregroundColor(hasRecording ? .white : .disabledDeleteSubmitBtn)
                 }
                 .frame(width: 60)
@@ -113,7 +115,7 @@ struct AudioControl: View {
                     // Haptic feedback
                     let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                     impactFeedback.impactOccurred()
-                        
+                    
                     withAnimation {
                         handleControlButtonPress()
                     }
@@ -129,7 +131,7 @@ struct AudioControl: View {
                                 .trim(from: 0, to: recordCircleProgress)
                                 .stroke(
                                     AngularGradient(
-                                        gradient: Gradient(colors: [.recordAng3, .recordAng2, .recordAng1]),
+                                        gradient: Gradient(colors: doesOverMinRecordTime() ? [.recordBtnStrokeInactive] : [.recordAng3, .recordAng2, .recordAng1]),
                                         center: .center
                                     ),
                                     style: StrokeStyle(lineWidth: 2, lineCap: .round)
@@ -138,24 +140,12 @@ struct AudioControl: View {
                                 .shadow(color: Color.white, radius: 20, x: 0, y: 0)
                                 .onChange(of: isRecording) { oldValue, newValue in
                                     if newValue == true {
-                                        withAnimation(.linear(duration: 15)) {
+                                        withAnimation(.linear(duration: 14)) {
                                             recordCircleProgress = 1
                                         }
                                     } else {
                                         withAnimation {
                                             recordCircleProgress = 0
-                                        }
-                                    }
-                                }
-                                .overlay {
-                                    Group {
-                                        if elapsedRecordTime > minRecordTime {
-                                            withAnimation(.easeInOut(duration: 0.3)) {
-                                                Circle()
-                                                    .stroke(style: StrokeStyle(lineWidth: isRecording ? 2 : 1))
-                                                    .foregroundStyle(.recordBtnStrokeInactive)
-                                                    .transition(.scale.combined(with: .opacity))
-                                            }
                                         }
                                     }
                                 }
@@ -165,13 +155,20 @@ struct AudioControl: View {
                             switch controlState {
                             case .idle:
                                 Circle()
-                                    .padding(3)
+                                    .padding(4)
                                     .foregroundStyle(.recordActionBtn)
                             case .recording:
                                 Image(systemName: "stop.fill")
                                     .resizable()
                                     .scaledToFit()
-                                    .foregroundStyle(elapsedRecordTime > minRecordTime ? Color.recordActionBtn: Color.gray)
+                                    .foregroundStyle(doesOverMinRecordTime() ? Color.recordActionBtn: Color.gray)
+                                    .frame(width: 18)
+                            case .processing:
+                                // Show a different icon or keep the stop icon disabled
+                                Image(systemName: "stop.fill")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .foregroundStyle(Color.gray)
                                     .frame(width: 18)
                             case .readyToPlay:
                                 Image(systemName: "play.fill")
@@ -197,18 +194,19 @@ struct AudioControl: View {
                         }
                     }
                 }
-                .frame(width: 45)
+                .frame(width: 49)
                 .padding(.horizontal, 30)
+                .disabled(controlState == .processing) // Disable button during processing
                 
                 
                 Button{
                     onSubmit()
                 }label: {
                     Text("Submit")
-                        .font(.system(.headline, weight: .regular))
-                        .foregroundStyle(hasRecording && elapsedRecordTime > minRecordTime && !isRecording ? .white : .disabledDeleteSubmitBtn)
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundStyle(hasRecording && doesOverMinRecordTime() && !isRecording && controlState != .processing ? .white : .disabledDeleteSubmitBtn)
                 }
-                .disabled(hasRecording && elapsedRecordTime > minRecordTime && !isRecording ? false : true)
+                .disabled(hasRecording && doesOverMinRecordTime() && !isRecording && controlState != .processing ? false : true)
                 .frame(width: 60)
                 
                 Spacer()
@@ -216,8 +214,9 @@ struct AudioControl: View {
             
             Text("Unmatch")
                 .foregroundStyle(.unmatchBtn)
-                .font(.caption)
-                .padding(.top)
+                .font(.subheadline)
+                .padding(.top, 15)
+                .padding(.bottom, 7)
         }
         .onAppear() {
             player.onFinished = {
@@ -225,7 +224,33 @@ struct AudioControl: View {
                 elapsedPlaybackTime = 0
             }
         }
-        .ignoresSafeArea(edges: .bottom)
+        .onChange(of: recorder.playbackWaveformData) { oldValue, newValue in
+            if controlState == .processing && !newValue.isEmpty {
+                controlState = .readyToPlay
+                player.setWaveformData(newValue)
+            }
+        }
+
+    }
+    
+    private func getWaveformData() -> [Float] {
+        switch controlState {
+        case .idle:
+            return []
+        case .recording:
+            return recorder.audioLevels
+        case .processing:
+            return !recorder.playbackWaveformData.isEmpty ? recorder.playbackWaveformData : recorder.audioLevels
+        case .readyToPlay, .playing, .paused:
+            // Use recorder's playback data if available, otherwise use player's data
+            return !recorder.playbackWaveformData.isEmpty ? recorder.playbackWaveformData : player.waveformData
+        }
+    }
+    
+    func doesOverMinRecordTime() -> Bool {
+        withAnimation {
+            return elapsedRecordTime >= minRecordTime
+        }
     }
     
     func formatTime(_ time: Int) -> String {
@@ -242,11 +267,16 @@ struct AudioControl: View {
             isRecording = true
             
         case .recording:
-            if elapsedRecordTime >= 15 {
+            if doesOverMinRecordTime() {
                 recorder.stopRecording()
-                controlState = .readyToPlay
+                controlState = .processing
                 isRecording = false
             }
+
+            
+        case .processing:
+            // Do nothing - button is disabled during processing
+            break
             
         case .readyToPlay:
             elapsedPlaybackTime = 0

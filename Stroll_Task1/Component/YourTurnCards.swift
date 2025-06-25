@@ -40,7 +40,8 @@ struct YourTurnCards: View {
                 if doesMakeMove && showHour {
                     HStack {
                         Text("📣")
-                            .padding(8)
+                            .font(.caption)
+                            .padding(5)
                             .background(.black)
                             .clipShape(Circle())
                         
@@ -63,7 +64,7 @@ struct YourTurnCards: View {
                             Circle()
                                 .fill(.cardHourBackground)
                         )
-                        .frame(width: 35)
+                        .frame(width: 30)
                         .shadow(color: .black, radius: 8)
                     }
                     .padding(.horizontal)
@@ -73,13 +74,13 @@ struct YourTurnCards: View {
                     Text("📣 They made a move!")
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, weight: .regular))
                         .background(.black)
                         .clipShape(Capsule())
                 }else {
                     Text("")
                         .padding(.vertical, 4)
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, weight: .regular))
                 }
                 Spacer()
                 
@@ -93,23 +94,25 @@ struct YourTurnCards: View {
                 Spacer()
                 
                 Text("\(user.name), \(user.age)")
-                    .font(.system(size: 15))
+                    .font(.headline)
                     .bold()
                     .multilineTextAlignment(.center)
                 
                 Text(quote)
-                    .font(.system(size: 10))
+                    .font(.system(size: 10, weight: .regular))
                     .foregroundStyle(.cardDesc)
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
                     .padding(.horizontal)
+                    .padding(.top, -4)
+                    .padding(.bottom, 10)
             }
             .padding(.horizontal, 6)
             .padding(.bottom, 45)
-            .padding(.top, -15)
+            .padding(.top, -30)
             .foregroundColor(.white)
         }
-        .frame(width: 158, height: 220)
+        .frame(width: 150, height: 210)
         .clipShape(RoundedRectangle(cornerRadius: 20))
         .shadow(radius: 5)
     }

@@ -1,12 +1,6 @@
 import SwiftUI
 import FlowStack
 
-//var users: [User] = [
-//    User(name: "Amanda", age: 22, question: "What is your most favorite childhood memory?"),
-//    User(name: "Malte", age: 31, question: "What is the most important quality in friendships to you?"),
-//    User(name: "Binghan", age: 28, question: "If you could choose to have one superpower, what would it be?")
-//]
-
 struct ChatView: View {
     @Namespace var animation
     
@@ -19,21 +13,20 @@ struct ChatView: View {
             VStack {
                 HStack {
                     VStack(alignment: .leading) {
-                        HStack(spacing: 14) {
+                        HStack(spacing: 11) {
                             Text("Your Turn")
-                                .font(.title2)
-                                .bold()
+                                .font(.system(size: 23, weight: .bold))
                             
                             Text("7")
                                 .font(.caption2)
                                 .bold()
                                 .foregroundStyle(.black)
                                 .padding(5)
-                                .background(.pastelPurple)
+                                .background(.notificationCount)
                                 .clipShape(Circle())
                         }
                         Text("Make your move, they are waiting 🎵")
-                            .font(.footnote)
+                            .font(.system(.footnote, weight: .thin))
                             .italic()
                             .foregroundStyle(.lightGrayCust)
                     }
@@ -46,8 +39,7 @@ struct ChatView: View {
                         .frame(height: 68)
                 }
                 .frame(alignment: .top)
-                .padding(.top, -30)
-                .padding(.bottom, -100)
+                .padding(.top, -40)
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 15) {
@@ -61,15 +53,16 @@ struct ChatView: View {
                 .flowDestination(for: User.self) { user in
                     RecordingView(user: user, quote: user.question, desc: "Mine is definitely sneaking the late night snacks")
                 }
-                .padding(.top, -60)
+                .padding(.top, -120)
                 
                 PagerTabStrip(tabs: ["Chats", "Pending"], selection: $selection) {
                     
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 10) {
+                        LazyVStack(alignment: .leading, spacing: 4) {
                             Text("The ice is broken. Time to hit it off")
-                                .font(.caption)
-                                .padding(.vertical, 10)
+                                .font(.footnote)
+                                .padding(.top, 10)
+                                .padding(.bottom, 10)
                                 .italic()
                                 .foregroundStyle(.lightGrayCust)
                             
@@ -87,7 +80,7 @@ struct ChatView: View {
                     }
                     .tag(1)
                 }
-                .padding(.top, -75)
+                .padding(.top, -105)
                 
             }
             .padding()
@@ -101,7 +94,7 @@ struct ChatView: View {
                     .overlay(content: {
                         Rectangle()
                             .foregroundStyle(
-                                LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
+                                LinearGradient(colors: [.clear, .black, .black], startPoint: .top, endPoint: .bottom)
                             )
                     })
                     .offset(x: -40, y: 0)

@@ -16,7 +16,7 @@ struct AnimatedWaveformView: View {
     }
     
     private var configuration = WaveformConfiguration(
-        barWidth: 1.0,      // Very thin lines
+        barWidth: 2.0,  
         barSpacing: 2.0,    // Small spacing between lines
         barColor: Color.recordingVisualizer,
         backgroundColor: Color.clear,
