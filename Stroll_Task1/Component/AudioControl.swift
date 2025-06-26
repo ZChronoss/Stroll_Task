@@ -72,7 +72,8 @@ struct AudioControl: View {
                     isPaused: controlState == .paused,
                     playbackProgress: player.playbackProgress
                 )
-                .opacity(player.isLoading || controlState == .processing ? 0.3 : 1.0)
+                .transition(.opacity)
+                .animation(.easeInOut(duration: 0.4), value: recorder.playbackWaveformData)
                 
                 // Loading indicator - show during playback loading AND processing
                 if player.isLoading || controlState == .processing {
@@ -216,7 +217,7 @@ struct AudioControl: View {
                 .foregroundStyle(.unmatchBtn)
                 .font(.subheadline)
                 .padding(.top, 15)
-                .padding(.bottom, 7)
+                .padding(.bottom, 22)
         }
         .onAppear() {
             player.onFinished = {

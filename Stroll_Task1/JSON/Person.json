@@ -3,18 +3,21 @@
         "id": 1,
         "name": "Amanda",
         "age": 22,
-        "question": "What is your most favorite childhood memory?"
+        "question": "What is your most favorite childhood memory?",
+        "answered": false
     },
     {
         "id": 2,
         "name": "Malte",
         "age": 31,
-        "question": "What is the most important quality in friendships to you?"
+        "question": "What is the most important quality in friendships to you?",
+        "answered": false
     },
     {
         "id": 3,
-        "name": "Amanda",
-        "age": 22,
-        "question": "If you could choose to have one superpower, what would it be?"
+        "name": "Binghan",
+        "age": 28,
+        "question": "If you could choose to have one superpower, what would it be?",
+        "answered": false
     }
 ]

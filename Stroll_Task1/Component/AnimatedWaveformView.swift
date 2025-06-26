@@ -46,7 +46,7 @@ struct AnimatedWaveformView: View {
             return
         }
         
-        if isPlaying || isPaused {
+        if isPlaying || isPaused || (!isRecording && !audioLevels.isEmpty) {
             // Draw complete waveform with playback progress for both playing and paused states
             drawPlaybackWaveform(context: context, size: size, maxBars: maxBars)
             return

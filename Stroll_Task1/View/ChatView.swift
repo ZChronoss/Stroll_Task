@@ -8,6 +8,8 @@ struct ChatView: View {
     
     @State private var users = [User]()
     
+    @State var lastSelectedUserIndex: Int?
+    
     var body: some View {
         FlowStack {
             VStack {
@@ -39,19 +41,40 @@ struct ChatView: View {
                         .frame(height: 68)
                 }
                 .frame(alignment: .top)
-                .padding(.top, -40)
+                .padding(.top, -20)
                 
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 15) {
                         ForEach(users) { user in
                             FlowLink(value: user, configuration: .init(cornerRadius: 20)) {
                                 YourTurnCards(user: user, quote: user.question, blurred: false)
+                                    .overlay {
+                                        ZStack {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .blur(radius: 10)
+                                                .foregroundStyle(.checkmark)
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .resizable()
+                                                .scaledToFit()
+                                                .foregroundStyle(.checkmark)
+                                        }
+                                        .frame(width: 30)
+                                        .opacity(user.answered ? 1.0 : 0.0)
+                                        .scaleEffect(user.answered ? 1.0 : 0.1)
+                                        .animation(.easeInOut(duration: 2.0), value: user.answered)
+                                    }
                             }
                         }
                     }
                 }
                 .flowDestination(for: User.self) { user in
-                    RecordingView(user: user, quote: user.question, desc: "Mine is definitely sneaking the late night snacks")
+                    RecordingView(
+                        user: user,
+                        quote: user.question,
+                        desc: "Mine is definitely sneaking the late night snacks"
+                    )
                 }
                 .padding(.top, -120)
                 
@@ -106,6 +129,7 @@ struct ChatView: View {
         .ignoresSafeArea(edges: .bottom)
         
     }
+
 }
 
 #Preview {

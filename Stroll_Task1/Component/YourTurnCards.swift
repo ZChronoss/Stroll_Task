@@ -24,13 +24,16 @@ struct YourTurnCards: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             
-            Group {
+            ZStack(alignment: .bottom) {
                 Image(user.name)
                     .resizable()
-                    .scaledToFill()
+                    .scaledToFit()
+                    .overlay {
+                        LinearGradient(colors: [.clear, .cardBottom], startPoint: .top, endPoint: .bottom)
+                    }
                 Rectangle()
-                    .foregroundStyle(.black)
-                    .frame(width: 180, height: 110)
+                    .foregroundStyle(.cardBottom)
+                    .frame(width: 180, height: 65)
                     .blur(radius: 10)
                 
             }
@@ -67,22 +70,33 @@ struct YourTurnCards: View {
                         .frame(width: 30)
                         .shadow(color: .black, radius: 8)
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 8)
+                    .padding(.top, 10)
                 }
                 
-                if doesMakeMove && !showHour {
-                    Text("📣 They made a move!")
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .font(.system(size: 10, weight: .regular))
-                        .background(.black)
-                        .clipShape(Capsule())
-                }else {
-                    Text("")
-                        .padding(.vertical, 4)
-                        .font(.system(size: 10, weight: .regular))
+                Group {
+                    if doesMakeMove && !showHour {
+                        Text("📣 They made a move!")
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .font(.system(size: 10, weight: .regular))
+                            .background(.black)
+                            .clipShape(Capsule())
+                    }else {
+                        Text("")
+                            .padding(.vertical, 4)
+                            .font(.system(size: 10, weight: .regular))
+                    }
+                    
                 }
-                Spacer()
+                .padding(.top, 10)
+                
+                if doesMakeMove && showHour {
+                    
+                } else {
+                    Spacer()
+                    
+                }
                 
                 if blurred {
                     Text("Tap to answer")
@@ -107,9 +121,8 @@ struct YourTurnCards: View {
                     .padding(.top, -4)
                     .padding(.bottom, 10)
             }
-            .padding(.horizontal, 6)
-            .padding(.bottom, 45)
-            .padding(.top, -30)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 2)
             .foregroundColor(.white)
         }
         .frame(width: 150, height: 210)

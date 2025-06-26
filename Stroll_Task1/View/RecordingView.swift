@@ -6,7 +6,7 @@ struct RecordingView: View {
     @Environment(\.flowDismiss) var flowDismiss
     @State var opacity: CGFloat = 0
     
-    var user: User
+    @ObservedObject var user: User
     let quote: String
     let desc: String
     
@@ -115,6 +115,9 @@ struct RecordingView: View {
                     .italic()
                 
                 AudioControl() {
+                    withAnimation(.easeInOut(duration: 2.0)) {
+                        user.answered = true
+                    }
                     flowDismiss()
                 }
                 .padding(.top, 35)
@@ -157,6 +160,6 @@ struct RecordingView: View {
 
 
 #Preview {
-    let user = User(id: 1, name: "Amanda", age: 22, question: "What is your most favorite childhood memory?")
+    @Previewable @State var user = User(id: 1, name: "Amanda", age: 22, question: "What is your most favorite childhood memory?", answered: false)
     RecordingView(user: user, quote: "What is your most favorite childhood memory?", desc: "Mine is definitely sneaking the late night snacks")
 }
